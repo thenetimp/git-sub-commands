@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# Instanciate defaults for commandline flags.
+update_version_type=0
+tag_message=""
+
+# Get 
+while [ "$1" != "" ]; do
+  case $1 in
+    -M | --major )    update_version_type=M
+                      ;;
+    -mn | --minor )    update_version_type=m
+                      ;;
+    -s | --submin )   update_version_type=s
+                      ;;
+    -m | --message )  tag_message=$2
+                      ;;
+  esac
+  shift
+done
+
+
+# Check if there is a .git directory representing a respository
+if [ "$tag_message" == 0 ]; then
+  clear
+  echo ""
+  echo "Please define a tag message using the -m or --message syntax"
+  echo ""
+  exit 1
+fi;
+
+# Check if there is a .git directory representing a respository
+if [ ! -d .git ]; then
+  clear
+  echo ""
+  echo "This directory is not a git repository"
+  echo ""
+  exit 1
+fi;
+
+# Check if there is a .git directory representing a respository
+if [ $update_version_type == 0 ]; then
+  clear
+  echo ""
+  echo "Must define type of version, major, minor or subminor. For more information"
+  echo ""
+  echo "git setv --help"
+  echo ""
+  exit 1
+fi;
+
+# Check that we are in 
+branch=$(git symbolic-ref --short HEAD) 
+
+if [ "$branch" != "master" ]; then
+  clear
+  echo ""
+  echo "You are not in the master branch.  Version tags can only take place in the master branch."
+  echo ""
+  exit 1
+fi;
+
+# Check the logs for any commits
+log=$(git log 2>&1) 
+
+if [ "$log" == "fatal: your current branch 'master' does not have any commits yet" ]; then
+  clear
+  echo ""
+  echo "Please make sure you have made at least one commit to the repository"
+  echo "before running this script again."
+  echo ""
+  exit 1
+fi;
+
+# Check if describe throws back a fatal error
+describe=$(git describe 2>&1)
+
+if [ "$describe" == "fatal: No names found, cannot describe anything." ]; then
+  clear
+  tagged=$(git tag -a 0.0.1 -m "initial tag of content")
+  exit 1
+else
+
+  # Describe the current commit
+  describe=$(git describe 2>&1)
+
+  # Parse the describe into 3 parts.
+  IFS='-' read -ra DESC <<< "$describe"
+  current_version=${DESC[0]}
+  commit_count=${DESC[1]}
+  sha_hash=${DESC[2]}
+  
+  if [ "$commit_count" == "" ]; then
+    clear
+    echo ""
+    echo "There has been no commit to the master branch."
+    echo "Did you forget to merge? Or pull from the remote?"
+    echo ""
+    exit 1
+  fi
+  
+  # Split the version into sub parts.
+  IFS='.' read -ra VERSION <<< "$current_version"
+  version_major=${VERSION[0]}
+  version_minor=${VERSION[1]}
+  version_submin=${VERSION[2]}
+  
+  if [ $update_version_type == "M" ]; then
+    version_major=$(($version_major+1))
+  elif [ $update_version_type == "m" ]; then
+    version_minor=$(($version_minor+1))
+  elif [ $update_version_type == "s" ]; then
+    version_submin=$(($version_major+1))
+  fi
+  
+  new_version=$version_major"."$version_minor"."$version_submin
+  tagged=$(git tag -a $new_version -m "$tag_message")
+  clear
+  echo ""
+  echo "Version tagged and ready for release."
+  echo "The new version is $new_version"
+  echo ""
+
+fi; 
+
+exit 1
