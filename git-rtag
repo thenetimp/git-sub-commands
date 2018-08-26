@@ -128,7 +128,7 @@ else
     version_minor=$(($version_minor+1))
     version_submin=0
   elif [ $update_version_type == "s" ]; then
-    version_submin=$(($version_major+1))
+    version_submin=$(($version_minor+1))
   fi
   
   new_version=$version_major"."$version_minor"."$version_submin
