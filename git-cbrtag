@@ -1,0 +1,196 @@
+#!/usr/local/bin/bash
+
+# Instanciate defaults for commandline flags.
+update_version_type=0
+# show_help=0
+
+# # Check if there is a .git directory representing a respository
+# if [ $show_help != 0 ]; then
+#   clear
+#   echo ""
+#   echo 'git rtag [[-M|mn|s] [-m commit message]] | [--h|-h]'
+#   echo ""
+#   echo " -M | --major:  Tag major version"
+#   echo " -mn | --minor:  Tag minor version"
+#   echo " -s | --submin:  Tag subminor version"
+#
+#   exit 1
+# fi;
+
+# Check that we're in a cookbook directory
+if [ ! -f "./metadata.rb" ]; then
+  clear
+  echo ""
+  echo "This is not a Chef cookbook directory"
+  echo ""
+  exit 1
+fi
+
+# Check if there is a .git directory representing a respository
+if [ ! -d .git ]; then
+  clear
+  echo ""
+  echo "This directory is not a git repository"
+  echo ""
+  exit 1
+fi;
+
+# Check that we are in 
+branch=$(git symbolic-ref --short HEAD) 
+
+if [ "$branch" != "master" ]; then
+  clear
+  echo ""
+  echo "You are not in the master branch."
+  echo "Version tags can only take place in the master branch."
+  echo ""
+  exit 1
+fi;
+
+# Check the logs for any commits
+log=$(git log 2>&1) 
+
+if [ "$log" == "fatal: your current branch 'master' does not have any commits yet" ]; then
+  clear
+  echo ""
+  echo "Please make sure you have made at least one commit to"
+  echo "the repository before running this script again."
+  echo ""
+  exit 1
+fi;
+
+# Read the metadata.rb file and get the version. 
+file_name="./metadata.rb"
+declare -A metadata
+
+# Read in the metadata.rb file and parse out the comments
+while IFS='' read -r line || [[ -n "$line" ]]; do
+  if [[ "$line" != "#"* ]]; then 
+    if [ "$line" != "" ]; then
+      IFS=' ' read -r config_key config_value <<< "$line"
+
+      # Check for the specified key and change it's value
+      if [ "version" == "$config_key" ]; then
+        version=${config_value//\'}
+      fi
+    fi
+  fi
+done < "$file_name"
+
+tagged=$(git tag -a $version -m "$tag_message")
+clear
+echo ""
+echo "Version tagged and ready for release."
+echo "The new version is $version"
+echo ""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+echo "done"
+exit 1
+
+# Check if describe throws back a fatal error
+describe=$(git describe 2>&1)
+
+if [ "$describe" == "fatal: No names found, cannot describe anything." ]; then
+  clear
+  tagged=$(git tag -a 0.0.1 -m "$tag_message")
+  exit 1
+else
+
+  # Describe the current commit
+  describe=$(git describe 2>&1)
+
+  # Parse the describe into 3 parts.
+  IFS='-' read -ra DESC <<< "$describe"
+  current_version=${DESC[0]}
+  commit_count=${DESC[1]}
+  sha_hash=${DESC[2]}
+  
+  if [ "$commit_count" == "" ]; then
+    clear
+    echo ""
+    echo "There has been no commit to the master branch."
+    echo "Did you forget to merge? Or pull from the remote?"
+    echo ""
+    exit 1
+  fi
+  
+  # Split the version into sub parts.
+  IFS='.' read -ra VERSION <<< "$current_version"
+  version_major=${VERSION[0]}
+  version_minor=${VERSION[1]}
+  version_submin=${VERSION[2]}
+  
+  if [ $update_version_type == "M" ]; then
+    version_major=$(($version_major+1))
+    version_minor=0
+    version_submin=0
+  elif [ $update_version_type == "m" ]; then
+    version_minor=$(($version_minor+1))
+    version_submin=0
+  elif [ $update_version_type == "s" ]; then
+    version_submin=$(($version_minor+1))
+  fi
+  
+  new_version=$version_major"."$version_minor"."$version_submin
+  tagged=$(git tag -a $new_version -m "$tag_message")
+  clear
+  echo ""
+  echo "Version tagged and ready for release."
+  echo "The new version is $new_version"
+  echo ""
+
+fi; 
+
+exit 1
