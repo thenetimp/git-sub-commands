@@ -13,3 +13,6 @@ git rtag [script options]
 
 ## List of scripts and their functions
 git-rtag - this script is used to version releases.
+
+git-cbrtag - this script is used to help manage chef cookbook versions.  It keeps the 
+             GIT repository version in sync with the chef cookbook version in metadata.rb
